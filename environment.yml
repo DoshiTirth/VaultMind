@@ -1,0 +1,10 @@
+name: vaultmind
+channels:
+  - defaults
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
+  - https://repo.anaconda.com/pkgs/msys2
+dependencies:
+  - python=3.11
+  - numpy=1.26
+prefix: C:\Users\doshi\.conda\envs\vaultmind

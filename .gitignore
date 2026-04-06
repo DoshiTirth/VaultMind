@@ -1,0 +1,22 @@
+# Environment
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ChromaDB local data
+chroma_db/
+
+# Uploads
+uploads/
+
+# Conda/Python
+*.egg-info/
+dist/
+build/
+.Python
+*.log
+
+# VS Code
+.vscode/
