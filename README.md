@@ -1,67 +1,113 @@
-# VaultMind — RAG Document Intelligence
+# 🧠 VaultMind — RAG Document Intelligence
 
-VaultMind is an AI-powered document Q&A application built with a clean RAG (Retrieval-Augmented Generation) pipeline. Upload any PDF and ask questions in natural language — VaultMind retrieves the most relevant chunks and generates accurate answers with source citations.
+> Upload documents. Ask anything. Get answers with sources.
+
+VaultMind is an AI-powered document Q&A application built with a clean RAG (Retrieval-Augmented Generation) pipeline — no LangChain, no bloat. Just direct OpenAI API + ChromaDB + FastAPI + React.
+
+![VaultMind](assets/screenshot-chat.png)
 
 ---
 
-## Screenshots
+## ✨ Features
 
-### Empty State
+| Feature | Description |
+|---|---|
+| 📄 **Multi-format Upload** | Upload PDF, DOCX, and TXT files |
+| 🔍 **RAG-Powered Q&A** | Ask natural language questions, get answers with page-level source citations |
+| 🧠 **Conversation History** | Follow-up questions work naturally — VaultMind remembers the conversation |
+| 📋 **Document Summarization** | One-click AI summary with overview, key topics, findings, and document type |
+| 💡 **Smart Query Suggestions** | Auto-generates 3 relevant questions after every upload |
+| 🗂️ **Multi-Document Vault** | Upload and query across multiple documents simultaneously |
+| 🗑️ **Document Manager** | Delete individual documents or clear the entire vault |
+| ✍️ **Markdown Rendering** | Answers render with bold, bullets, headers, and code formatting |
+| ↓ **Chat Export** | Download full conversation as a `.md` file |
+| ⚡ **Local Vector Store** | ChromaDB persists embeddings on disk — no external vector DB needed |
+
+---
+
+## 📸 Screenshots
+
+### Empty State — Ready to Upload
 ![Empty State](assets/screenshot-empty.png)
 
-### Vault Active — Document Uploaded
+### Vault Active — Document Uploaded with Smart Suggestions
 ![Vault Active](assets/screenshot-vault-active.png)
 
-### Chat with Answer & Sources
+### Chat with Answer, Sources & Markdown Rendering
 ![Chat](assets/screenshot-chat.png)
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```
-PDF Upload → Text Extraction → Chunking → OpenAI Embeddings → ChromaDB
-                                                                    ↓
-User Question → OpenAI Embeddings → Similarity Search → Context Assembly → GPT-4o-mini → Answer + Sources
+PDF/DOCX/TXT Upload
+        ↓
+Text Extraction (PyPDF / python-docx / plain text)
+        ↓
+Token-aware Chunking (tiktoken, 500 tokens + 50 overlap)
+        ↓
+OpenAI Embeddings (text-embedding-3-small)
+        ↓
+ChromaDB Vector Store (local persistent)
+        ↓
+User Question → OpenAI Embeddings → Cosine Similarity Search
+        ↓
+Top-K Chunks → Context Assembly → GPT-4o-mini
+        ↓
+Answer + Source Citations + Conversation History
 ```
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |---|---|
 | **Embeddings** | OpenAI `text-embedding-3-small` |
 | **LLM** | OpenAI `gpt-4o-mini` |
-| **Vector Store** | ChromaDB (local persistent) |
+| **Vector Store** | ChromaDB (local persistent, cosine similarity) |
 | **PDF Parsing** | PyPDF |
+| **DOCX Parsing** | python-docx |
 | **Chunking** | tiktoken (token-aware, 500 tokens + 50 overlap) |
 | **Backend API** | FastAPI + Uvicorn |
 | **Frontend** | React + Vite |
+| **HTTP Client** | Axios |
+| **Markdown** | react-markdown |
 | **Environment** | Conda (Python 3.11) |
+
+> ⚡ No LangChain — built directly on OpenAI API and ChromaDB for full control and simplicity.
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 VaultMind/
 ├── vaultmind/
 │   ├── ingest/
 │   │   ├── pdf_loader.py       ← PDF text extraction
+│   │   ├── text_loader.py      ← TXT and DOCX extraction
 │   │   ├── chunker.py          ← Token-aware chunking
-│   │   └── embedder.py         ← OpenAI embeddings
+│   │   └── embedder.py         ← OpenAI embeddings (batched)
 │   ├── store/
-│   │   └── chroma_store.py     ← ChromaDB operations
+│   │   └── chroma_store.py     ← ChromaDB add/query operations
 │   ├── query/
-│   │   └── retriever.py        ← Similarity search
+│   │   └── retriever.py        ← Embedding query + similarity search
 │   ├── llm/
-│   │   └── openai_client.py    ← RAG answer generation
+│   │   └── openai_client.py    ← RAG answer generation with history
 │   └── api/
-│       └── main.py             ← FastAPI endpoints
+│       └── main.py             ← FastAPI routes
 ├── frontend/                   ← React + Vite UI
-├── uploads/                    ← PDFs stored here
-├── chroma_db/                  ← Vector store (local)
+│   └── src/
+│       ├── components/
+│       │   ├── UploadPanel.jsx ← Document vault + suggestions
+│       │   ├── ChatPanel.jsx   ← Chat interface + export
+│       │   └── SourceCard.jsx  ← Source citation cards
+│       ├── App.jsx
+│       └── index.css
+├── uploads/                    ← Uploaded documents stored here
+├── chroma_db/                  ← ChromaDB vector store (local)
 ├── assets/                     ← Screenshots
 ├── test_pipeline.py            ← CLI end-to-end test
 ├── .env.example                ← Environment template
@@ -71,7 +117,7 @@ VaultMind/
 
 ---
 
-## Setup & Installation
+## ⚙️ Setup & Installation
 
 ### Prerequisites
 - Python 3.11+
@@ -135,27 +181,33 @@ http://localhost:5173
 
 ---
 
-## Usage
+## 🚀 Usage
 
-1. **Upload a PDF** — drag and drop or click the upload zone
-2. **Wait for ingestion** — VaultMind chunks and embeds the document automatically
-3. **Ask questions** — type any natural language question about the document
-4. **Review sources** — each answer includes source cards showing the file, page number, and match score
+1. **Upload a document** — drag and drop or click the upload zone (PDF, DOCX, or TXT)
+2. **Review suggestions** — VaultMind auto-generates 3 smart questions about your document
+3. **Ask questions** — type any natural language question or click a suggestion
+4. **Review sources** — each answer shows source cards with file name, page number, and match score
+5. **Summarize** — click ✦ Summarize on any document for a structured AI summary
+6. **Export** — click ↓ Export Chat to download the conversation as a `.md` file
 
 ---
 
-## API Endpoints
+## 📡 API Endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/` | Health check |
-| `POST` | `/upload` | Upload and ingest a PDF |
-| `POST` | `/query` | Ask a question, get answer + sources |
+| `POST` | `/upload` | Upload and ingest a PDF, DOCX, or TXT file |
+| `POST` | `/query` | Ask a question with conversation history |
+| `GET` | `/documents` | List all uploaded documents |
+| `GET` | `/summarize/{filename}` | Generate AI summary for a document |
+| `GET` | `/suggestions/{filename}` | Get 3 suggested questions for a document |
+| `DELETE` | `/documents/{filename}` | Delete a single document |
 | `DELETE` | `/clear` | Clear all documents from the vault |
 
 ---
 
-## Environment Variables
+## 🔑 Environment Variables
 
 | Variable | Description | Default |
 |---|---|---|
@@ -167,7 +219,7 @@ http://localhost:5173
 
 ---
 
-## Author
+## 👤 Author
 
 **Tirth Doshi**
 - GitHub: [@DoshiTirth](https://github.com/DoshiTirth)
