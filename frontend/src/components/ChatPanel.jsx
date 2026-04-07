@@ -11,6 +11,7 @@ export default function ChatPanel({ vaultReady }) {
       text: "VaultMind is ready. Upload a document and start asking questions.",
     },
   ]);
+  const [history, setHistory] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef();
@@ -18,6 +19,19 @@ export default function ChatPanel({ vaultReady }) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Reset history when vault is cleared
+  useEffect(() => {
+    if (!vaultReady) {
+      setHistory([]);
+      setMessages([
+        {
+          role: "system",
+          text: "VaultMind is ready. Upload a document and start asking questions.",
+        },
+      ]);
+    }
+  }, [vaultReady]);
 
   const sendMessage = async () => {
     if (!input.trim() || loading || !vaultReady) return;
@@ -30,8 +44,11 @@ export default function ChatPanel({ vaultReady }) {
     try {
       const res = await axios.post(`${API}/query`, {
         question,
+        history,
         n_results: 5,
       });
+
+      setHistory(res.data.history);
 
       setMessages((prev) => [
         ...prev,
@@ -62,6 +79,16 @@ export default function ChatPanel({ vaultReady }) {
     }
   };
 
+  const clearChat = () => {
+    setHistory([]);
+    setMessages([
+      {
+        role: "system",
+        text: "Conversation cleared. Ask a new question.",
+      },
+    ]);
+  };
+
   return (
     <div style={{
       flex: 1,
@@ -70,6 +97,48 @@ export default function ChatPanel({ vaultReady }) {
       overflow: "hidden",
       background: "var(--bg-primary)",
     }}>
+
+      {/* ── Chat Toolbar ── */}
+      {messages.length > 1 && vaultReady && (
+        <div style={{
+          padding: "8px 32px",
+          borderBottom: "1px solid var(--border)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          background: "var(--bg-secondary)",
+        }}>
+          <span style={{
+            fontSize: "11px",
+            color: "var(--text-muted)",
+            fontFamily: "'Syne', sans-serif",
+          }}>
+            {history.length / 2} turn{history.length / 2 !== 1 ? "s" : ""} in conversation
+          </span>
+          <button
+            onClick={clearChat}
+            style={{
+              padding: "4px 12px",
+              borderRadius: "6px",
+              background: "transparent",
+              border: "1px solid var(--border)",
+              color: "var(--text-muted)",
+              fontSize: "11px",
+              fontFamily: "'Syne', sans-serif",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.borderColor = "var(--accent-amber)";
+              e.target.style.color = "var(--accent-amber)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.borderColor = "var(--border)";
+              e.target.style.color = "var(--text-muted)";
+            }}
+          >
+            Clear Chat
+          </button>
+        </div>
+      )}
 
       {/* ── Messages ── */}
       <div style={{
