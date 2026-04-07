@@ -1,4 +1,4 @@
-# 🧠 VaultMind — RAG Document Intelligence
+# VaultMind — RAG Document Intelligence
 
 > Upload documents. Ask anything. Get answers with sources.
 
@@ -8,7 +8,7 @@ VaultMind is an AI-powered document Q&A application built with a clean RAG (Retr
 
 ---
 
-## ✨ Features
+## Features
 
 | Feature | Description |
 |---|---|
