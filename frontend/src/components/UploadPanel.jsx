@@ -40,8 +40,10 @@ export default function UploadPanel({ onUploadSuccess, onVaultCleared, onSummary
   };
 
   const handleFile = async (file) => {
-    if (!file || !file.name.endsWith(".pdf")) {
-      setError("Only PDF files are supported.");
+    const allowed = [".pdf", ".txt", ".docx"];
+    const ext = "." + file.name.split(".").pop().toLowerCase();
+    if (!file || !allowed.includes(ext)) {
+      setError("Only PDF, TXT, and DOCX files are supported.");
       return;
     }
 
@@ -169,7 +171,7 @@ export default function UploadPanel({ onUploadSuccess, onVaultCleared, onSummary
         <input
           ref={fileRef}
           type="file"
-          accept=".pdf"
+          accept=".pdf,.txt,.docx"
           style={{ display: "none" }}
           onChange={(e) => handleFile(e.target.files[0])}
         />

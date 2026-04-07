@@ -56,20 +56,37 @@ def root():
 @app.post("/upload")
 async def upload_pdf(file: UploadFile = File(...)):
     """
-    Upload a PDF, chunk it, embed it, and store in ChromaDB.
+    Upload a PDF, TXT, or DOCX file, chunk it, embed it, and store in ChromaDB.
     """
-    if not file.filename.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+    allowed_extensions = (".pdf", ".txt", ".docx")
+    filename_lower = file.filename.lower()
+
+    if not any(filename_lower.endswith(ext) for ext in allowed_extensions):
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF, TXT, and DOCX files are supported."
+        )
 
     file_path = os.path.join(UPLOAD_DIR, file.filename)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
     try:
-        pages = load_pdf(file_path)
+        # Route to correct loader based on extension
+        if filename_lower.endswith(".pdf"):
+            from vaultmind.ingest.pdf_loader import load_pdf
+            pages = load_pdf(file_path)
+        elif filename_lower.endswith(".txt"):
+            from vaultmind.ingest.text_loader import load_txt
+            pages = load_txt(file_path)
+        elif filename_lower.endswith(".docx"):
+            from vaultmind.ingest.text_loader import load_docx
+            pages = load_docx(file_path)
+
         chunks = chunk_pages(pages)
         chunks_with_embeddings = get_embeddings(chunks)
         add_chunks(chunks_with_embeddings)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -78,7 +95,6 @@ async def upload_pdf(file: UploadFile = File(...)):
         "pages_processed": len(pages),
         "chunks_stored": len(chunks)
     })
-
 
 @app.post("/query", response_model=QueryResponse)
 def query_documents(request: QueryRequest):
@@ -131,8 +147,9 @@ def list_documents():
     Returns list of all uploaded documents.
     """
     files = []
+    allowed_extensions = (".pdf", ".txt", ".docx")
     for f in os.listdir(UPLOAD_DIR):
-        if f.endswith(".pdf"):
+        if f.lower().endswith(allowed_extensions):
             full_path = os.path.join(UPLOAD_DIR, f)
             files.append({
                 "filename": f,
