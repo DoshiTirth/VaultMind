@@ -4,7 +4,7 @@ import SourceCard from "./SourceCard";
 
 const API = "http://127.0.0.1:8000";
 
-export default function ChatPanel({ vaultReady }) {
+export default function ChatPanel({ vaultReady, summaryMessage, onSummaryConsumed }) {
   const [messages, setMessages] = useState([
     {
       role: "system",
@@ -32,6 +32,21 @@ export default function ChatPanel({ vaultReady }) {
       ]);
     }
   }, [vaultReady]);
+  useEffect(() => {
+    if (summaryMessage) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "summary",
+          filename: summaryMessage.filename,
+          text: summaryMessage.summary,
+          total_chunks: summaryMessage.total_chunks,
+        },
+      ]);
+      onSummaryConsumed();
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [summaryMessage]);
 
   const sendMessage = async () => {
     if (!input.trim() || loading || !vaultReady) return;
@@ -243,6 +258,59 @@ export default function ChatPanel({ vaultReady }) {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+            {/* Summary message */}
+            {msg.role === "summary" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
+                  <div style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "8px",
+                    background: "linear-gradient(135deg, var(--accent-amber), var(--accent-cyan))",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "14px",
+                    flexShrink: 0,
+                  }}>
+                    📋
+                  </div>
+                  <div style={{
+                    flex: 1,
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--accent-amber)",
+                    borderRadius: "2px 12px 12px 12px",
+                    padding: "14px 16px",
+                    fontSize: "13px",
+                    color: "var(--text-primary)",
+                    lineHeight: 1.8,
+                    whiteSpace: "pre-wrap",
+                  }}>
+                    <p style={{
+                      fontFamily: "'Syne', sans-serif",
+                      fontWeight: 700,
+                      fontSize: "11px",
+                      color: "var(--accent-amber)",
+                      letterSpacing: "1.5px",
+                      textTransform: "uppercase",
+                      marginBottom: "10px",
+                    }}>
+                      📋 Summary — {msg.filename}
+                    </p>
+                    {msg.text}
+                    <p style={{
+                      fontSize: "10px",
+                      color: "var(--text-muted)",
+                      marginTop: "10px",
+                      borderTop: "1px solid var(--border)",
+                      paddingTop: "8px",
+                    }}>
+                      Generated from {msg.total_chunks} chunks
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>

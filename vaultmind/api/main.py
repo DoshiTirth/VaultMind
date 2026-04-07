@@ -155,3 +155,84 @@ def delete_document(filename: str):
     os.remove(file_path)
 
     return {"message": f"🗑️ '{filename}' removed from vault."}
+
+@app.get("/summarize/{filename}")
+def summarize_document(filename: str):
+    """
+    Generates a structured summary of a specific document
+    by sampling its most representative chunks.
+    """
+    import chromadb
+    from vaultmind.store.chroma_store import CHROMA_DB_PATH, COLLECTION_NAME
+
+    try:
+        chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+        collection = chroma_client.get_or_create_collection(COLLECTION_NAME)
+
+        # Get all chunks for this specific file
+        results = collection.get(
+            where={"source": filename},
+            include=["documents", "metadatas"]
+        )
+
+        if not results["documents"]:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No chunks found for '{filename}'. Please upload it first."
+            )
+
+        # Sample up to 20 evenly spaced chunks to stay within token limits
+        docs = results["documents"]
+        metas = results["metadatas"]
+        total = len(docs)
+        step = max(1, total // 20)
+        sampled_docs = docs[::step][:20]
+        sampled_metas = metas[::step][:20]
+
+        # Build context from sampled chunks
+        context_parts = []
+        for doc, meta in zip(sampled_docs, sampled_metas):
+            context_parts.append(
+                f"[Page {meta['page_number']}]\n{doc}"
+            )
+        context = "\n\n---\n\n".join(context_parts)
+
+        # Ask OpenAI for a structured summary
+        from openai import OpenAI
+        llm = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        response = llm.chat.completions.create(
+            model=os.getenv("CHAT_MODEL", "gpt-4o-mini"),
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are VaultMind, an expert document summarizer. "
+                        "Given document chunks, produce a structured summary with these sections:\n"
+                        "**Document Overview** — 2-3 sentences on what this document is about.\n"
+                        "**Key Topics** — bullet list of main topics covered.\n"
+                        "**Key Findings / Main Points** — bullet list of the most important information.\n"
+                        "**Document Type** — what kind of document this is (report, manual, resume, etc.).\n"
+                        "Be concise and factual."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": f"Summarize this document:\n\n{context}"
+                }
+            ],
+            temperature=0.3
+        )
+
+        summary = response.choices[0].message.content
+
+        return {
+            "filename": filename,
+            "total_chunks": total,
+            "summary": summary
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -6,6 +6,7 @@ import "./index.css";
 export default function App() {
   const [vaultReady, setVaultReady] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [summaryMessage, setSummaryMessage] = useState(null);
 
   return (
     <div style={{
@@ -104,8 +105,15 @@ export default function App() {
             setVaultReady(false);
             setUploadedFile(null);
           }}
+          onSummary={(data) => {
+            setSummaryMessage(data);
+          }}
         />
-        <ChatPanel vaultReady={vaultReady} />
+        <ChatPanel
+          vaultReady={vaultReady}
+          summaryMessage={summaryMessage}
+          onSummaryConsumed={() => setSummaryMessage(null)}
+        />
       </div>
 
       <style>{`

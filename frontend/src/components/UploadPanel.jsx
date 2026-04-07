@@ -3,15 +3,15 @@ import axios from "axios";
 
 const API = "http://127.0.0.1:8000";
 
-export default function UploadPanel({ onUploadSuccess, onVaultCleared }) {
+export default function UploadPanel({ onUploadSuccess, onVaultCleared, onSummary }) {
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [stats, setStats] = useState(null);
+  const [summarizing, setSummarizing] = useState(null);
   const fileRef = useRef();
 
-  // Load document list on mount
   useEffect(() => {
     fetchDocuments();
   }, []);
@@ -54,6 +54,24 @@ export default function UploadPanel({ onUploadSuccess, onVaultCleared }) {
       setError(err.response?.data?.detail || "Upload failed.");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleSummarize = async (filename) => {
+    setSummarizing(filename);
+    try {
+      const res = await axios.get(
+        `${API}/summarize/${encodeURIComponent(filename)}`
+      );
+      onSummary({
+        filename: res.data.filename,
+        summary: res.data.summary,
+        total_chunks: res.data.total_chunks,
+      });
+    } catch (err) {
+      setError(err.response?.data?.detail || "Summarization failed.");
+    } finally {
+      setSummarizing(null);
     }
   };
 
@@ -234,8 +252,8 @@ export default function UploadPanel({ onUploadSuccess, onVaultCleared }) {
               key={doc.filename}
               style={{
                 display: "flex",
-                alignItems: "center",
-                gap: "10px",
+                flexDirection: "column",
+                gap: "8px",
                 padding: "10px 12px",
                 background: "var(--bg-card)",
                 border: "1px solid var(--border)",
@@ -245,56 +263,93 @@ export default function UploadPanel({ onUploadSuccess, onVaultCleared }) {
               onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--border-accent)"}
               onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
             >
-              {/* Icon */}
-              <span style={{ fontSize: "16px", flexShrink: 0 }}>📄</span>
+              {/* File info row */}
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "16px", flexShrink: 0 }}>📄</span>
+                <div style={{ flex: 1, overflow: "hidden" }}>
+                  <p style={{
+                    fontSize: "11px",
+                    color: "var(--text-primary)",
+                    fontFamily: "'Syne', sans-serif",
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}>
+                    {doc.filename}
+                  </p>
+                  <p style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
+                    {doc.size_kb} KB
+                  </p>
+                </div>
 
-              {/* File info */}
-              <div style={{ flex: 1, overflow: "hidden" }}>
-                <p style={{
-                  fontSize: "11px",
-                  color: "var(--text-primary)",
-                  fontFamily: "'Syne', sans-serif",
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}>
-                  {doc.filename}
-                </p>
-                <p style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
-                  {doc.size_kb} KB
-                </p>
+                {/* Delete button */}
+                <button
+                  onClick={() => handleDeleteDocument(doc.filename)}
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                    borderRadius: "6px",
+                    background: "transparent",
+                    border: "1px solid var(--border)",
+                    color: "var(--text-muted)",
+                    fontSize: "12px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#ff6b6b";
+                    e.currentTarget.style.color = "#ff6b6b";
+                    e.currentTarget.style.background = "rgba(255,80,80,0.08)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.color = "var(--text-muted)";
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  ✕
+                </button>
               </div>
 
-              {/* Delete button */}
+              {/* Summarize button */}
               <button
-                onClick={() => handleDeleteDocument(doc.filename)}
+                onClick={() => handleSummarize(doc.filename)}
+                disabled={summarizing === doc.filename}
                 style={{
-                  width: "24px",
-                  height: "24px",
+                  width: "100%",
+                  padding: "6px",
                   borderRadius: "6px",
-                  background: "transparent",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-muted)",
-                  fontSize: "12px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
+                  background: summarizing === doc.filename
+                    ? "var(--bg-hover)"
+                    : "var(--accent-cyan-dim)",
+                  border: `1px solid ${summarizing === doc.filename
+                    ? "var(--border)"
+                    : "var(--border-accent)"}`,
+                  color: summarizing === doc.filename
+                    ? "var(--text-muted)"
+                    : "var(--accent-cyan)",
+                  fontSize: "11px",
+                  fontFamily: "'Syne', sans-serif",
+                  fontWeight: 600,
                   transition: "all 0.2s ease",
+                  letterSpacing: "0.5px",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#ff6b6b";
-                  e.currentTarget.style.color = "#ff6b6b";
-                  e.currentTarget.style.background = "rgba(255,80,80,0.08)";
+                  if (summarizing !== doc.filename) {
+                    e.currentTarget.style.background = "rgba(0,229,255,0.2)";
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border)";
-                  e.currentTarget.style.color = "var(--text-muted)";
-                  e.currentTarget.style.background = "transparent";
+                  if (summarizing !== doc.filename) {
+                    e.currentTarget.style.background = "var(--accent-cyan-dim)";
+                  }
                 }}
               >
-                ✕
+                {summarizing === doc.filename ? "⏳ Summarizing..." : "✦ Summarize"}
               </button>
             </div>
           ))}
