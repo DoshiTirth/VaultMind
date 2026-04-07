@@ -102,6 +102,55 @@ export default function ChatPanel({ vaultReady, summaryMessage, onSummaryConsume
     }
   };
 
+  const exportChat = () => {
+  if (messages.length <= 1) return;
+
+  const lines = [];
+    lines.push("# VaultMind — Chat Export");
+    lines.push(`_Exported on ${new Date().toLocaleString()}_`);
+    lines.push("");
+    lines.push("---");
+    lines.push("");
+  
+    messages.forEach((msg) => {
+      if (msg.role === "system") return;
+  
+      if (msg.role === "user") {
+        lines.push(`## 🙋 You`);
+        lines.push(msg.text);
+        lines.push("");
+      }
+  
+      if (msg.role === "assistant") {
+        lines.push(`## 🧠 VaultMind`);
+        lines.push(msg.text);
+        if (msg.sources && msg.sources.length > 0) {
+          lines.push("");
+          lines.push("**Sources:**");
+          msg.sources.forEach((s) => {
+            lines.push(`- ${s.source} | Page ${s.page_number} | ${Math.round(s.score * 100)}% match`);
+          });
+        }
+        lines.push("");
+      }
+  
+      if (msg.role === "summary") {
+        lines.push(`## 📋 Summary — ${msg.filename}`);
+        lines.push(msg.text);
+        lines.push(`_Generated from ${msg.total_chunks} chunks_`);
+        lines.push("");
+      }
+    });
+  
+    const blob = new Blob([lines.join("\n")], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vaultmind-chat-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const clearChat = () => {
     setHistory([]);
     setMessages([
@@ -138,6 +187,29 @@ export default function ChatPanel({ vaultReady, summaryMessage, onSummaryConsume
           }}>
             {history.length / 2} turn{history.length / 2 !== 1 ? "s" : ""} in conversation
           </span>
+          <button
+              onClick={exportChat}
+              style={{
+                padding: "4px 12px",
+                borderRadius: "6px",
+                background: "transparent",
+                border: "1px solid var(--border)",
+                color: "var(--text-muted)",
+                fontSize: "11px",
+                fontFamily: "'Syne', sans-serif",
+                marginRight: "8px",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.borderColor = "var(--accent-cyan)";
+                e.target.style.color = "var(--accent-cyan)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.borderColor = "var(--border)";
+                e.target.style.color = "var(--text-muted)";
+              }}
+            >
+              ↓ Export Chat
+            </button>
           <button
             onClick={clearChat}
             style={{
