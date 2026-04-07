@@ -7,6 +7,7 @@ export default function App() {
   const [vaultReady, setVaultReady] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [summaryMessage, setSummaryMessage] = useState(null);
+  const [suggestedQuestion, setSuggestedQuestion] = useState(null);
 
   return (
     <div style={{
@@ -108,11 +109,16 @@ export default function App() {
           onSummary={(data) => {
             setSummaryMessage(data);
           }}
+          onSuggest={(question) => {
+            setSuggestedQuestion(question);
+          }}
         />
         <ChatPanel
           vaultReady={vaultReady}
           summaryMessage={summaryMessage}
           onSummaryConsumed={() => setSummaryMessage(null)}
+          suggestedQuestion={suggestedQuestion}
+          onSuggestionConsumed={() => setSuggestedQuestion(null)}
         />
       </div>
 

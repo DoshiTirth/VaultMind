@@ -3,13 +3,14 @@ import axios from "axios";
 
 const API = "http://127.0.0.1:8000";
 
-export default function UploadPanel({ onUploadSuccess, onVaultCleared, onSummary }) {
+export default function UploadPanel({ onUploadSuccess, onVaultCleared, onSummary, onSuggest }) {
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [stats, setStats] = useState(null);
   const [summarizing, setSummarizing] = useState(null);
+  const [suggestions, setSuggestions] = useState([]);
   const fileRef = useRef();
 
   useEffect(() => {
@@ -25,6 +26,16 @@ export default function UploadPanel({ onUploadSuccess, onVaultCleared, onSummary
       }
     } catch {
       // backend might not be ready yet
+    }
+  };
+
+  const fetchSuggestions = async (filename) => {
+    try {
+      const res = await axios.get(`${API}/suggestions/${encodeURIComponent(filename)}`);
+      setSuggestions(res.data.suggestions);
+      // Don't call onSuggest here — only call it when user clicks a suggestion
+    } catch {
+      // suggestions are optional, fail silently
     }
   };
 
@@ -49,6 +60,7 @@ export default function UploadPanel({ onUploadSuccess, onVaultCleared, onSummary
         chunks: res.data.chunks_stored,
       });
       onUploadSuccess(file.name);
+      await fetchSuggestions(file.name);
       await fetchDocuments();
     } catch (err) {
       setError(err.response?.data?.detail || "Upload failed.");
@@ -352,6 +364,53 @@ export default function UploadPanel({ onUploadSuccess, onVaultCleared, onSummary
                 {summarizing === doc.filename ? "⏳ Summarizing..." : "✦ Summarize"}
               </button>
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* Query Suggestions */}
+      {suggestions.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <p style={{
+            fontFamily: "'Syne', sans-serif",
+            fontWeight: 700,
+            fontSize: "11px",
+            color: "var(--accent-cyan)",
+            letterSpacing: "1.5px",
+            textTransform: "uppercase",
+          }}>
+            Suggested Questions
+          </p>
+          {suggestions.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => onSuggest(s)}
+              style={{
+                padding: "8px 12px",
+                borderRadius: "var(--radius)",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                color: "var(--text-secondary)",
+                fontSize: "11px",
+                textAlign: "left",
+                fontFamily: "'JetBrains Mono', monospace",
+                lineHeight: 1.5,
+                transition: "all 0.2s ease",
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--accent-cyan)";
+                e.currentTarget.style.color = "var(--text-primary)";
+                e.currentTarget.style.background = "var(--accent-cyan-dim)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--border)";
+                e.currentTarget.style.color = "var(--text-secondary)";
+                e.currentTarget.style.background = "var(--bg-card)";
+              }}
+            >
+              ✦ {s}
+            </button>
           ))}
         </div>
       )}

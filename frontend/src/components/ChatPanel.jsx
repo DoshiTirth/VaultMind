@@ -5,7 +5,7 @@ import ReactMarkdown from "react-markdown";
 
 const API = "http://127.0.0.1:8000";
 
-export default function ChatPanel({ vaultReady, summaryMessage, onSummaryConsumed }) {
+export default function ChatPanel({ vaultReady, summaryMessage, onSummaryConsumed, suggestedQuestion, onSuggestionConsumed }) {
   const [messages, setMessages] = useState([
     {
       role: "system",
@@ -34,20 +34,27 @@ export default function ChatPanel({ vaultReady, summaryMessage, onSummaryConsume
     }
   }, [vaultReady]);
   useEffect(() => {
-    if (summaryMessage) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "summary",
-          filename: summaryMessage.filename,
-          text: summaryMessage.summary,
-          total_chunks: summaryMessage.total_chunks,
-        },
-      ]);
-      onSummaryConsumed();
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      if (summaryMessage) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "summary",
+            filename: summaryMessage.filename,
+            text: summaryMessage.summary,
+            total_chunks: summaryMessage.total_chunks,
+          },
+        ]);
+        onSummaryConsumed();
+        bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    }, [summaryMessage]);
+  
+    useEffect(() => {
+    if (suggestedQuestion) {
+      setInput(suggestedQuestion);
+      onSuggestionConsumed();
     }
-  }, [summaryMessage]);
+  }, [suggestedQuestion]);
 
   const sendMessage = async () => {
     if (!input.trim() || loading || !vaultReady) return;

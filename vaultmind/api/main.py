@@ -236,3 +236,64 @@ def summarize_document(filename: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/suggestions/{filename}")
+def get_suggestions(filename: str):
+    """
+    Generates 3 suggested questions based on document content.
+    """
+    import chromadb
+    from vaultmind.store.chroma_store import CHROMA_DB_PATH, COLLECTION_NAME
+
+    try:
+        chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
+        collection = chroma_client.get_or_create_collection(COLLECTION_NAME)
+
+        results = collection.get(
+            where={"source": filename},
+            include=["documents", "metadatas"]
+        )
+
+        if not results["documents"]:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No chunks found for '{filename}'."
+            )
+
+        # Sample first 5 chunks to understand the document
+        docs = results["documents"][:5]
+        context = "\n\n---\n\n".join(docs)
+
+        from openai import OpenAI
+        llm = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        response = llm.chat.completions.create(
+            model=os.getenv("CHAT_MODEL", "gpt-4o-mini"),
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are VaultMind. Based on the document content provided, "
+                        "generate exactly 3 short, specific, useful questions a user might ask. "
+                        "Return ONLY a JSON array of 3 strings, nothing else. "
+                        "Example: [\"What are the main requirements?\", \"Who is this document for?\", \"What are the key dates?\"]"
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": f"Document content:\n\n{context}"
+                }
+            ],
+            temperature=0.5
+        )
+
+        import json
+        raw = response.choices[0].message.content.strip()
+        suggestions = json.loads(raw)
+
+        return {"filename": filename, "suggestions": suggestions[:3]}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
