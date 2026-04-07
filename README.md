@@ -1,10 +1,10 @@
-# 🧠 VaultMind — RAG Document Intelligence
+# VaultMind — RAG Document Intelligence
 
 VaultMind is an AI-powered document Q&A application built with a clean RAG (Retrieval-Augmented Generation) pipeline. Upload any PDF and ask questions in natural language — VaultMind retrieves the most relevant chunks and generates accurate answers with source citations.
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 ### Empty State
 ![Empty State](assets/screenshot-empty.png)
@@ -17,7 +17,7 @@ VaultMind is an AI-powered document Q&A application built with a clean RAG (Retr
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 PDF Upload → Text Extraction → Chunking → OpenAI Embeddings → ChromaDB
@@ -27,7 +27,7 @@ User Question → OpenAI Embeddings → Similarity Search → Context Assembly �
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -42,7 +42,7 @@ User Question → OpenAI Embeddings → Similarity Search → Context Assembly �
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 VaultMind/
@@ -71,7 +71,7 @@ VaultMind/
 
 ---
 
-## ⚙️ Setup & Installation
+## Setup & Installation
 
 ### Prerequisites
 - Python 3.11+
@@ -135,7 +135,7 @@ http://localhost:5173
 
 ---
 
-## 🚀 Usage
+## Usage
 
 1. **Upload a PDF** — drag and drop or click the upload zone
 2. **Wait for ingestion** — VaultMind chunks and embeds the document automatically
@@ -144,7 +144,7 @@ http://localhost:5173
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -155,7 +155,7 @@ http://localhost:5173
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
 | Variable | Description | Default |
 |---|---|---|
@@ -167,7 +167,7 @@ http://localhost:5173
 
 ---
 
-## 👤 Author
+## Author
 
 **Tirth Doshi**
 - GitHub: [@DoshiTirth](https://github.com/DoshiTirth)
