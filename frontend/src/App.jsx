@@ -100,6 +100,10 @@ export default function App() {
             setVaultReady(true);
             setUploadedFile(filename);
           }}
+          onVaultCleared={() => {
+            setVaultReady(false);
+            setUploadedFile(null);
+          }}
         />
         <ChatPanel vaultReady={vaultReady} />
       </div>

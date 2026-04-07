@@ -1,15 +1,32 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
 const API = "http://127.0.0.1:8000";
 
-export default function UploadPanel({ onUploadSuccess }) {
+export default function UploadPanel({ onUploadSuccess, onVaultCleared }) {
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploaded, setUploaded] = useState(null);
   const [error, setError] = useState(null);
+  const [documents, setDocuments] = useState([]);
   const [stats, setStats] = useState(null);
   const fileRef = useRef();
+
+  // Load document list on mount
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  const fetchDocuments = async () => {
+    try {
+      const res = await axios.get(`${API}/documents`);
+      setDocuments(res.data.documents);
+      if (res.data.documents.length > 0) {
+        onUploadSuccess(res.data.documents[res.data.documents.length - 1].filename);
+      }
+    } catch {
+      // backend might not be ready yet
+    }
+  };
 
   const handleFile = async (file) => {
     if (!file || !file.name.endsWith(".pdf")) {
@@ -27,12 +44,12 @@ export default function UploadPanel({ onUploadSuccess }) {
       const res = await axios.post(`${API}/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setUploaded(file.name);
       setStats({
         pages: res.data.pages_processed,
         chunks: res.data.chunks_stored,
       });
       onUploadSuccess(file.name);
+      await fetchDocuments();
     } catch (err) {
       setError(err.response?.data?.detail || "Upload failed.");
     } finally {
@@ -40,12 +57,29 @@ export default function UploadPanel({ onUploadSuccess }) {
     }
   };
 
-  const handleClear = async () => {
+  const handleDeleteDocument = async (filename) => {
+    try {
+      await axios.delete(`${API}/documents/${encodeURIComponent(filename)}`);
+      const updated = documents.filter((d) => d.filename !== filename);
+      setDocuments(updated);
+      if (updated.length === 0) {
+        onVaultCleared();
+        setStats(null);
+      } else {
+        onUploadSuccess(updated[updated.length - 1].filename);
+      }
+    } catch {
+      setError("Failed to delete document.");
+    }
+  };
+
+  const handleClearAll = async () => {
     try {
       await axios.delete(`${API}/clear`);
-      setUploaded(null);
+      setDocuments([]);
       setStats(null);
       setError(null);
+      onVaultCleared();
     } catch {
       setError("Failed to clear vault.");
     }
@@ -78,7 +112,7 @@ export default function UploadPanel({ onUploadSuccess }) {
           Document Vault
         </p>
         <p style={{ color: "var(--text-secondary)", fontSize: "12px", lineHeight: 1.6 }}>
-          Upload a PDF to begin querying its contents with AI.
+          Upload PDFs to query their contents with AI.
         </p>
       </div>
 
@@ -93,16 +127,12 @@ export default function UploadPanel({ onUploadSuccess }) {
           handleFile(e.dataTransfer.files[0]);
         }}
         style={{
-          border: `2px dashed ${dragging ? "var(--accent-cyan)" : uploaded ? "var(--accent-amber)" : "var(--text-muted)"}`,
+          border: `2px dashed ${dragging ? "var(--accent-cyan)" : "var(--text-muted)"}`,
           borderRadius: "var(--radius)",
-          padding: "32px 16px",
+          padding: "24px 16px",
           textAlign: "center",
           cursor: "pointer",
-          background: dragging
-            ? "var(--accent-cyan-dim)"
-            : uploaded
-            ? "var(--accent-amber-dim)"
-            : "var(--bg-card)",
+          background: dragging ? "var(--accent-cyan-dim)" : "var(--bg-card)",
           transition: "all 0.2s ease",
         }}
       >
@@ -113,68 +143,22 @@ export default function UploadPanel({ onUploadSuccess }) {
           style={{ display: "none" }}
           onChange={(e) => handleFile(e.target.files[0])}
         />
-        <div style={{ fontSize: "32px", marginBottom: "12px" }}>
-          {uploading ? "⏳" : uploaded ? "📄" : "📂"}
+        <div style={{ fontSize: "28px", marginBottom: "8px" }}>
+          {uploading ? "⏳" : "📂"}
         </div>
         <p style={{
           fontFamily: "'Syne', sans-serif",
           fontWeight: 600,
           fontSize: "13px",
-          color: uploaded ? "var(--accent-amber)" : "var(--text-primary)",
+          color: "var(--text-primary)",
           marginBottom: "4px",
         }}>
-          {uploading
-            ? "Processing PDF..."
-            : uploaded
-            ? uploaded
-            : "Drop PDF here"}
+          {uploading ? "Processing PDF..." : "Drop PDF here"}
         </p>
         <p style={{ fontSize: "11px", color: "var(--text-muted)" }}>
           {uploading ? "Chunking & embedding..." : "or click to browse"}
         </p>
       </div>
-
-      {/* Stats */}
-      {stats && (
-        <div style={{
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius)",
-          padding: "16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-        }}>
-          <p style={{
-            fontFamily: "'Syne', sans-serif",
-            fontWeight: 700,
-            fontSize: "11px",
-            color: "var(--accent-cyan)",
-            letterSpacing: "1.5px",
-            textTransform: "uppercase",
-          }}>
-            Ingestion Stats
-          </p>
-          {[
-            { label: "Pages Processed", value: stats.pages },
-            { label: "Chunks Stored", value: stats.chunks },
-          ].map(({ label, value }) => (
-            <div key={label} style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}>
-              <span style={{ color: "var(--text-secondary)", fontSize: "12px" }}>{label}</span>
-              <span style={{
-                fontFamily: "'Syne', sans-serif",
-                fontWeight: 700,
-                color: "var(--accent-amber)",
-                fontSize: "14px",
-              }}>{value}</span>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* Error */}
       {error && (
@@ -190,10 +174,137 @@ export default function UploadPanel({ onUploadSuccess }) {
         </div>
       )}
 
-      {/* Clear Button */}
-      {uploaded && (
+      {/* Last Ingestion Stats */}
+      {stats && (
+        <div style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          padding: "14px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+        }}>
+          <p style={{
+            fontFamily: "'Syne', sans-serif",
+            fontWeight: 700,
+            fontSize: "11px",
+            color: "var(--accent-cyan)",
+            letterSpacing: "1.5px",
+            textTransform: "uppercase",
+          }}>
+            Last Ingestion
+          </p>
+          {[
+            { label: "Pages", value: stats.pages },
+            { label: "Chunks", value: stats.chunks },
+          ].map(({ label, value }) => (
+            <div key={label} style={{
+              display: "flex",
+              justifyContent: "space-between",
+            }}>
+              <span style={{ color: "var(--text-secondary)", fontSize: "12px" }}>{label}</span>
+              <span style={{
+                fontFamily: "'Syne', sans-serif",
+                fontWeight: 700,
+                color: "var(--accent-amber)",
+                fontSize: "13px",
+              }}>{value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Document List */}
+      {documents.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <p style={{
+            fontFamily: "'Syne', sans-serif",
+            fontWeight: 700,
+            fontSize: "11px",
+            color: "var(--accent-cyan)",
+            letterSpacing: "1.5px",
+            textTransform: "uppercase",
+          }}>
+            Vault — {documents.length} doc{documents.length !== 1 ? "s" : ""}
+          </p>
+
+          {documents.map((doc) => (
+            <div
+              key={doc.filename}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                padding: "10px 12px",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius)",
+                transition: "border-color 0.2s ease",
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--border-accent)"}
+              onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+            >
+              {/* Icon */}
+              <span style={{ fontSize: "16px", flexShrink: 0 }}>📄</span>
+
+              {/* File info */}
+              <div style={{ flex: 1, overflow: "hidden" }}>
+                <p style={{
+                  fontSize: "11px",
+                  color: "var(--text-primary)",
+                  fontFamily: "'Syne', sans-serif",
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}>
+                  {doc.filename}
+                </p>
+                <p style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
+                  {doc.size_kb} KB
+                </p>
+              </div>
+
+              {/* Delete button */}
+              <button
+                onClick={() => handleDeleteDocument(doc.filename)}
+                style={{
+                  width: "24px",
+                  height: "24px",
+                  borderRadius: "6px",
+                  background: "transparent",
+                  border: "1px solid var(--border)",
+                  color: "var(--text-muted)",
+                  fontSize: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "#ff6b6b";
+                  e.currentTarget.style.color = "#ff6b6b";
+                  e.currentTarget.style.background = "rgba(255,80,80,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border)";
+                  e.currentTarget.style.color = "var(--text-muted)";
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Clear All Button */}
+      {documents.length > 0 && (
         <button
-          onClick={handleClear}
+          onClick={handleClearAll}
           style={{
             padding: "10px",
             borderRadius: "var(--radius)",
@@ -202,6 +313,7 @@ export default function UploadPanel({ onUploadSuccess }) {
             color: "var(--text-secondary)",
             fontSize: "12px",
             marginTop: "auto",
+            fontFamily: "'Syne', sans-serif",
           }}
           onMouseEnter={(e) => {
             e.target.style.borderColor = "#ff6b6b";
@@ -212,7 +324,7 @@ export default function UploadPanel({ onUploadSuccess }) {
             e.target.style.color = "var(--text-secondary)";
           }}
         >
-          🗑️ Clear Vault
+          🗑️ Clear All
         </button>
       )}
     </div>

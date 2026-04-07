@@ -139,3 +139,19 @@ def list_documents():
                 "size_kb": round(os.path.getsize(full_path) / 1024, 1)
             })
     return {"documents": files}
+
+@app.delete("/documents/{filename}")
+def delete_document(filename: str):
+    """
+    Deletes a single document from uploads folder.
+    Note: ChromaDB chunks for this file remain queryable
+    until vault is fully cleared.
+    """
+    file_path = os.path.join(UPLOAD_DIR, filename)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail=f"File '{filename}' not found.")
+
+    os.remove(file_path)
+
+    return {"message": f"🗑️ '{filename}' removed from vault."}
