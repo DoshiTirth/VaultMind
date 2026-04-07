@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import SourceCard from "./SourceCard";
+import ReactMarkdown from "react-markdown";
 
 const API = "http://127.0.0.1:8000";
 
@@ -232,9 +233,34 @@ export default function ChatPanel({ vaultReady, summaryMessage, onSummaryConsume
                     fontSize: "13px",
                     color: "var(--text-primary)",
                     lineHeight: 1.8,
-                    whiteSpace: "pre-wrap",
                   }}>
-                    {msg.text}
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p style={{ marginBottom: "8px" }}>{children}</p>,
+                        strong: ({ children }) => <strong style={{ color: "var(--accent-cyan)", fontWeight: 700 }}>{children}</strong>,
+                        em: ({ children }) => <em style={{ color: "var(--accent-amber)" }}>{children}</em>,
+                        ul: ({ children }) => <ul style={{ paddingLeft: "20px", marginBottom: "8px" }}>{children}</ul>,
+                        ol: ({ children }) => <ol style={{ paddingLeft: "20px", marginBottom: "8px" }}>{children}</ol>,
+                        li: ({ children }) => <li style={{ marginBottom: "4px" }}>{children}</li>,
+                        code: ({ children }) => (
+                          <code style={{
+                            background: "var(--bg-hover)",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            fontSize: "12px",
+                            color: "var(--accent-amber)",
+                            fontFamily: "'JetBrains Mono', monospace",
+                          }}>
+                            {children}
+                          </code>
+                        ),
+                        h1: ({ children }) => <h1 style={{ fontSize: "16px", fontFamily: "'Syne', sans-serif", color: "var(--accent-cyan)", marginBottom: "8px" }}>{children}</h1>,
+                        h2: ({ children }) => <h2 style={{ fontSize: "14px", fontFamily: "'Syne', sans-serif", color: "var(--accent-cyan)", marginBottom: "6px" }}>{children}</h2>,
+                        h3: ({ children }) => <h3 style={{ fontSize: "13px", fontFamily: "'Syne', sans-serif", color: "var(--accent-amber)", marginBottom: "6px" }}>{children}</h3>,
+                      }}
+                    >
+                      {msg.text}
+                    </ReactMarkdown>
                   </div>
                 </div>
 
@@ -286,7 +312,6 @@ export default function ChatPanel({ vaultReady, summaryMessage, onSummaryConsume
                     fontSize: "13px",
                     color: "var(--text-primary)",
                     lineHeight: 1.8,
-                    whiteSpace: "pre-wrap",
                   }}>
                     <p style={{
                       fontFamily: "'Syne', sans-serif",
@@ -299,7 +324,16 @@ export default function ChatPanel({ vaultReady, summaryMessage, onSummaryConsume
                     }}>
                       📋 Summary — {msg.filename}
                     </p>
-                    {msg.text}
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p style={{ marginBottom: "8px" }}>{children}</p>,
+                        strong: ({ children }) => <strong style={{ color: "var(--accent-amber)", fontWeight: 700 }}>{children}</strong>,
+                        ul: ({ children }) => <ul style={{ paddingLeft: "20px", marginBottom: "8px" }}>{children}</ul>,
+                        li: ({ children }) => <li style={{ marginBottom: "4px" }}>{children}</li>,
+                      }}
+                    >
+                      {msg.text}
+                    </ReactMarkdown>
                     <p style={{
                       fontSize: "10px",
                       color: "var(--text-muted)",
