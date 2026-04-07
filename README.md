@@ -12,20 +12,20 @@ VaultMind is an AI-powered document Q&A application built with a clean RAG (Retr
 
 | Feature | Description |
 |---|---|
-| 📄 **Multi-format Upload** | Upload PDF, DOCX, and TXT files |
-| 🔍 **RAG-Powered Q&A** | Ask natural language questions, get answers with page-level source citations |
-| 🧠 **Conversation History** | Follow-up questions work naturally — VaultMind remembers the conversation |
-| 📋 **Document Summarization** | One-click AI summary with overview, key topics, findings, and document type |
-| 💡 **Smart Query Suggestions** | Auto-generates 3 relevant questions after every upload |
-| 🗂️ **Multi-Document Vault** | Upload and query across multiple documents simultaneously |
-| 🗑️ **Document Manager** | Delete individual documents or clear the entire vault |
-| ✍️ **Markdown Rendering** | Answers render with bold, bullets, headers, and code formatting |
-| ↓ **Chat Export** | Download full conversation as a `.md` file |
-| ⚡ **Local Vector Store** | ChromaDB persists embeddings on disk — no external vector DB needed |
+| **Multi-format Upload** | Upload PDF, DOCX, and TXT files |
+| **RAG-Powered Q&A** | Ask natural language questions, get answers with page-level source citations |
+| **Conversation History** | Follow-up questions work naturally — VaultMind remembers the conversation |
+| **Document Summarization** | One-click AI summary with overview, key topics, findings, and document type |
+| **Smart Query Suggestions** | Auto-generates 3 relevant questions after every upload |
+| **Multi-Document Vault** | Upload and query across multiple documents simultaneously |
+| **Document Manager** | Delete individual documents or clear the entire vault |
+| **Markdown Rendering** | Answers render with bold, bullets, headers, and code formatting |
+|**Chat Export** | Download full conversation as a `.md` file |
+| **Local Vector Store** | ChromaDB persists embeddings on disk — no external vector DB needed |
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 ### Empty State — Ready to Upload
 ![Empty State](assets/screenshot-empty.png)
@@ -38,7 +38,7 @@ VaultMind is an AI-powered document Q&A application built with a clean RAG (Retr
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 PDF/DOCX/TXT Upload
@@ -60,7 +60,7 @@ Answer + Source Citations + Conversation History
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -76,11 +76,11 @@ Answer + Source Citations + Conversation History
 | **Markdown** | react-markdown |
 | **Environment** | Conda (Python 3.11) |
 
-> ⚡ No LangChain — built directly on OpenAI API and ChromaDB for full control and simplicity.
+> No LangChain — built directly on OpenAI API and ChromaDB for full control and simplicity.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 VaultMind/
@@ -117,7 +117,7 @@ VaultMind/
 
 ---
 
-## ⚙️ Setup & Installation
+## Setup & Installation
 
 ### Prerequisites
 - Python 3.11+
@@ -181,7 +181,7 @@ http://localhost:5173
 
 ---
 
-## 🚀 Usage
+## Usage
 
 1. **Upload a document** — drag and drop or click the upload zone (PDF, DOCX, or TXT)
 2. **Review suggestions** — VaultMind auto-generates 3 smart questions about your document
@@ -192,7 +192,7 @@ http://localhost:5173
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -207,7 +207,7 @@ http://localhost:5173
 
 ---
 
-## 🔑 Environment Variables
+## Environment Variables
 
 | Variable | Description | Default |
 |---|---|---|
@@ -219,7 +219,7 @@ http://localhost:5173
 
 ---
 
-## 👤 Author
+## Author
 
 **Tirth Doshi**
 - GitHub: [@DoshiTirth](https://github.com/DoshiTirth)
